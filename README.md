@@ -226,20 +226,57 @@ python mIHC_patch_label_generation.py
 
 ### II. Model training and validation
 
-##### 1. Multi-step multi-modal ensemble survival model (MMES) training and validation
-###### 1.1 HE modality step1 & step2
+##### 4. Multi-step multi-modal ensemble survival model (MMES) training and validation
+###### 4.1 HE modality patch-level discrete survival prediction
 
-Step1: Patch-level single-modality discrete survival prediction 
+In **./survival_prediction/HE_modality** directory
 
-Step2: Patient-level discrete-time hazard rate ensemble 
+For the modality of HE-stained image, we inputted the 1280-dimensional embedding features extracted by the Virchow model into a neural network with a Multilayer Perceptron (MLP) consisting of layers with 64 and 32 units. The batch size during training is 256, the number of epochs is 15. We used Adam optimizer to optimize loss function with learning rate of 0.0005, and the weight decay of 0.0001. The model weights are saved in **./model_weights/HE_features_Virchow_surv_bin**. Results are saced in  **./model_results/HE_features_Virchow_surv_bin**.
 
-###### 3.2 mIHC modality step1 & step2
+```bash
+python HE_ablation_surv_bin_main.py\
+    --model_name HE_features_Virchow_surv_bin\
+    --GNN_type HE1_features\
+    --TMA_test1 TMA4\
+    --TMA_test2 TMA5\
+    --HE_features_num 1280\
+    --epochs_num 15\
+    --learning_rate 0.0005\
+    --layers 128 128 128 128\
+    --surv_mlp 64 32\
+    --batch_size 256
+```
 
-Step1: Patch-level single-modality discrete survival prediction 
+###### 4.2 mIHC modality patch-level discrete survival prediction
 
-Step2: Patient-level discrete-time hazard rate ensemble 
+In **./survival_prediction/mIHC_modality** directory
 
-###### 3.3 Step3: Cox regression based on HE and mIHC ensembled scores and clinical data 
+For the modality of mIHC data, we used Hypergraph Neural Networks (HGNN) to extract the features of our constructed patch-level Cell-Hypergraph. We first transform the 28-dimensional features of each node in the Cell-Hypergraph into 128 dimensions, then input them into an HGNN with three HyperConv layers, each having 128 dimensions. After each HyperConv layer, ReLU and Self-Attention Graph Pooling (SAGPool) with a ratio of 0.6 are performed, followed by global mean pooling to obtain graph-level feature representations. The feature representations from the three layers are then concatenated and input into a MLP consisting of layers with 64 and 32 units, ultimately outputting the hazard rate corresponding to four intervals. The loss function also uses the negative log-likelihood loss of the discrete survival model. The batch size during training is 256, the number of epochs is 50. We used Adam optimizer to optimize loss function with learning rate of 0.0005, and the weight decay of 0.0001. The model weights are saved in **./model_weights/hyper_mIHC_surv_bin**. Results are saced in  **./model_results/hyper_mIHC_surv_bin**.
+
+```bash
+python mIHC_surv_bin_main.py\
+    --model_name hyper_mIHC_surv_bin\
+    --GNN_type Hypergraph\
+    --TMA_test1 TMA4\
+    --TMA_test2 TMA5\
+    --epochs_num 50\
+    --learning_rate 0.0005\
+    --layers 128 128 128 128\
+    --surv_mlp 64 32\
+    --batch_size 256
+```
+
+###### 4.3 Cox regression based on HE and mIHC ensembled scores and clinical data 
+
+In **./survival_prediction/post_fusion_cox** directory
+
+After above steps, each patient's multiple HE-stained patches and mIHC patches have respectively obtained their corresponding patch-level discrete-time hazard rate. For these two modalities, we separately performed patient-level ensemble, averaging the hazard rate for each of the four intervals, resulting in a patient-level HE-based discrete-time hazard rate and a patient-level mIHC-based discrete-time hazard rate.
+
+The final step of MMES model is the Cox regression based on HE and mIHC ensembled scores and clinical data. The input variables are the patient-level HE-based discrete-time hazard rate and mIHC-based discrete-time hazard rate obtained in 4.1 and 4.2, as well as the clinical data. The clinical data includes gender, age, and tumor grade. The grade (low, medium, and high) is encoded into dummy variables. 
+
+```bash
+python ensemble_score_post_fusion_evaluation
+```
 
 ### Reference
 
