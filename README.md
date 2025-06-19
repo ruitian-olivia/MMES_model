@@ -281,7 +281,7 @@ python mIHC_surv_bin_main.py\
 
 In **./survival_prediction/post_fusion_cox** directory
 
-After above steps, each patient's multiple HE-stained patches and mIHC patches have respectively obtained their corresponding patch-level discrete-time hazard rate $h_\theta\left(t \mid x^i\right)$ and patch-level risk score $-\left\{S_\theta\left(t_1\right)+S_\theta\left(t_2\right)+S_\theta\left(t_3\right)+S_\theta\left(t_4\right)\right\}$. For these two modalities, we separately performed patient-level ensemble, averaging risk scores from all patches of one patient's tissue sample, resulting in a patient-level HE-based risk score and a patient-level mIHC-based risk score.
+After above steps, each patient's multiple HE-stained patches and mIHC patches have respectively obtained their corresponding patch-level discrete-time hazard rate and patch-level risk score. For these two modalities, we separately performed patient-level ensemble, averaging risk scores from all patches of one patient's tissue sample, resulting in a patient-level HE-based risk score and a patient-level mIHC-based risk score.
 
 The final step of MMES model is the Cox regression based on HE and mIHC ensemble risk scores and clinical data. The input variables are the patient-level HE-based risk score and mIHC-based risk score obtained in 4.1 and 4.2, as well as the clinical data. The clinical data includes gender, age, and tumor grade. The grade (low, intermediate, and high) is encoded into dummy variables. 
 
