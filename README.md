@@ -4,8 +4,14 @@
 
 Code in **./preprocessing**
 
+
 ##### 1. HE-stained images preprocessing
 In **./preprocessing/HE_images** directory
+
+<p align="center">
+    <img src="figures/preprocessing.jpg" width="640"> <br />
+    <em> Schematic workflow of input data preprocessing</em>
+</p>
 
 ###### 1.1 HE-stained tissue microarray (TMA) de-array
 For HE-stained TMAs slides scanned by a digital microscope under the magnification of 40×, we decomposed TMAs into 3200×3200 pixel HE-stained images corresponding to each sample core, with the resolution of 0.5 µm/pixel. 
@@ -226,6 +232,11 @@ python mIHC_patch_label_generation.py
 
 ### II. Model training and validation
 
+<p align="center">
+    <img src="figures/MMES.jpg" width="640"> <br />
+    <em> The overall framework of our MMES model</em>
+</p>
+
 ##### 4. Multi-step multi-modal ensemble survival model (MMES) training and validation
 ###### 4.1 HE modality patch-level discrete survival prediction
 
@@ -266,16 +277,20 @@ python mIHC_surv_bin_main.py\
     --batch_size 256
 ```
 
-###### 4.3 Cox regression based on HE and mIHC ensembled scores and clinical data 
+###### 4.3 Cox regression based on HE and mIHC ensemble scores and clinical data 
 
 In **./survival_prediction/post_fusion_cox** directory
 
-After above steps, each patient's multiple HE-stained patches and mIHC patches have respectively obtained their corresponding patch-level discrete-time hazard rate. For these two modalities, we separately performed patient-level ensemble, averaging the hazard rate for each of the four intervals, resulting in a patient-level HE-based discrete-time hazard rate and a patient-level mIHC-based discrete-time hazard rate.
+After above steps, each patient's multiple HE-stained patches and mIHC patches have respectively obtained their corresponding patch-level discrete-time hazard rate $h_\theta\left(t \mid x^i\right)$ and patch-level risk score $-\left\{S_\theta\left(t_1\right)+S_\theta\left(t_2\right)+S_\theta\left(t_3\right)+S_\theta\left(t_4\right)\right\}$. For these two modalities, we separately performed patient-level ensemble, averaging risk scores from all patches of one patient's tissue sample, resulting in a patient-level HE-based risk score and a patient-level mIHC-based risk score.
 
-The final step of MMES model is the Cox regression based on HE and mIHC ensembled scores and clinical data. The input variables are the patient-level HE-based discrete-time hazard rate and mIHC-based discrete-time hazard rate obtained in 4.1 and 4.2, as well as the clinical data. The clinical data includes gender, age, and tumor grade. The grade (low, medium, and high) is encoded into dummy variables. 
+The final step of MMES model is the Cox regression based on HE and mIHC ensemble risk scores and clinical data. The input variables are the patient-level HE-based risk score and mIHC-based risk score obtained in 4.1 and 4.2, as well as the clinical data. The clinical data includes gender, age, and tumor grade. The grade (low, intermediate, and high) is encoded into dummy variables. 
 
 ```bash
-python ensemble_score_post_fusion_evaluation
+python ensemble_score_post_fusion_evaluation.py
+    --model_name 'MMES_all_modality' \
+    --HE_df_root '../HE_modality/model_results/HE_features_Virchow_surv_bin/surv_record' \
+    --mIHC_df_root '../mIHC_modality/model_results/hyper_mIHC_surv_bin/surv_record' \
+    --feature_cols 'HE_riskScore' 'mIHC_riskScore' 'gender' 'age' 'grade_2' 'grade_3' 'surv_time' 'event'
 ```
 
 ### Reference
